@@ -1,514 +1,495 @@
 import { Head, usePage } from '@inertiajs/react';
-import {
-    ArrowUpRight,
-    Calendar,
-    CircleDollarSign,
-    Clock3,
-    HandCoins,
-    PackageCheck,
-    TrendingDown,
-    TrendingUp,
-    Users,
-} from 'lucide-react';
+import { TrendingDown, TrendingUp } from 'lucide-react';
+import { useRef, useState } from 'react';
 import { dashboard } from '@/routes';
 
-interface Auth {
-    user: { name: string };
+// ── Types ─────────────────────────────────────────────────────────────────
+
+interface ServiceSummary {
+    total_orders: number;
+    total_revenue: number;
+    today_orders: number;
+    order_growth: number;
+    revenue_growth: number;
 }
 
-const stats = [
-    {
-        label: 'TOTAL CUSTOMER',
-        value: '47,176',
-        change: '+8.2%',
-        note: 'Naik dibanding bulan lalu',
-        icon: Users,
-        bg: 'bg-pink-100',
-        iconColor: 'text-pink-600',
-    },
-    {
-        label: 'OMSET BULAN INI',
-        value: 'Rp199.5M',
-        change: '+12.4%',
-        note: 'Target 92% tercapai',
-        icon: HandCoins,
-        bg: 'bg-yellow-100',
-        iconColor: 'text-yellow-600',
-    },
-    {
-        label: 'PESANAN BULAN INI',
-        value: '913',
-        change: '+4.9%',
-        note: 'Rata-rata 31 order per hari',
-        icon: Calendar,
-        bg: 'bg-pink-100',
-        iconColor: 'text-pink-600',
-    },
-    {
-        label: 'GROWTH PESANAN',
-        value: 'VS Last Month',
-        badge: '-45.7%',
-        badgeColor: 'bg-red-100 text-red-500',
-        change: 'Perlu atensi',
-        note: 'Konversi checkout melambat',
-        icon: TrendingDown,
-        bg: 'bg-yellow-100',
-        iconColor: 'text-yellow-600',
-    },
-];
+interface ComparisonPoint {
+    label: string;
+    mkl_orders: number;
+    mkl_revenue: number;
+    idp_orders: number;
+    idp_revenue: number;
+}
 
-const insights = [
-    {
-        title: 'Conversion Rate',
-        value: '68.4%',
-        detail: 'Lead ke order naik 3.1% minggu ini',
-        icon: TrendingUp,
-        tone: 'bg-emerald-50 text-emerald-600',
-    },
-    {
-        title: 'Average Order Value',
-        value: 'Rp218k',
-        detail: 'Stabil di segmen premium frame',
-        icon: CircleDollarSign,
-        tone: 'bg-amber-50 text-amber-600',
-    },
-    {
-        title: 'On-time Fulfillment',
-        value: '96.1%',
-        detail: 'Mayoritas order terkirim kurang dari 24 jam',
-        icon: PackageCheck,
-        tone: 'bg-pink-50 text-pink-600',
-    },
-];
+interface PageProps {
+    auth: { user: { name: string } };
+    mkl: ServiceSummary;
+    idp: ServiceSummary;
+    comparisonDaily: ComparisonPoint[];
+    comparisonHourly: ComparisonPoint[];
+}
 
-const agenda = [
-    {
-        title: 'Review performa campaign Shopee',
-        time: '09:00',
-    },
-    {
-        title: 'Sinkronisasi stok frame bestseller',
-        time: '13:30',
-    },
-    {
-        title: 'Validasi SLA pengiriman weekend',
-        time: '16:00',
-    },
-];
+// ── Helpers ───────────────────────────────────────────────────────────────
 
-const transactions = [
-    {
-        name: 'Santidelaaa',
-        platform: 'SHOPEE',
-        code: '#2026051203574952',
-        time: '1 hari lalu',
-        amount: 'Rp166k',
-        status: 'KIRIM',
-        statusColor: 'text-green-600',
-        statusBg: 'bg-green-50',
-    },
-    {
-        name: 'Niken Puspitasari',
-        platform: '',
-        code: '#MK250520260498',
-        time: '29 menit lalu',
-        amount: 'Rp150k',
-        status: 'ORDER FOTO MENUNGGU',
-        statusColor: 'text-pink-600',
-        statusBg: 'bg-pink-50',
-    },
-    {
-        name: 'Aan Rosiyanthi',
-        platform: '',
-        code: '#MK250520260497',
-        time: '1 jam lalu',
-        amount: 'Rp400k',
-        status: 'ORDER FOTO MENUNGGU',
-        statusColor: 'text-pink-600',
-        statusBg: 'bg-pink-50',
-    },
-    {
-        name: 'Safrianti Nainggo...',
-        platform: '',
-        code: '#MK250520260496',
-        time: '1 jam lalu',
-        amount: 'Rp270k',
-        status: 'ORDER FOTO MENUNGGU',
-        statusColor: 'text-pink-600',
-        statusBg: 'bg-pink-50',
-    },
-    {
-        name: 'Rina Oktaviani',
-        platform: '',
-        code: '#MK250520260495',
-        time: '2 jam lalu',
-        amount: 'Rp220k',
-        status: 'KIRIM',
-        statusColor: 'text-green-600',
-        statusBg: 'bg-green-50',
-    },
-];
+function fmt(n: number): string {
+    if (n >= 1_000_000_000) return `Rp${(n / 1_000_000_000).toFixed(1)}M`;
+    if (n >= 1_000_000) return `Rp${(n / 1_000_000).toFixed(1)}jt`;
+    if (n >= 1_000) return `Rp${Math.round(n / 1_000)}k`;
+    return `Rp${n}`;
+}
 
-const chartData = [8.2, 13.5, 9.1, 11.8, 8.6, 10.2, 9.4, 12.7, 10.5, 11.2, 13.1, 12.4];
-const chartMonths = ['Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei'];
+function GrowthBadge({ value }: { value: number }) {
+    const pos = value >= 0;
+    return (
+        <span
+            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-bold ${pos ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`}
+        >
+            {pos ? <TrendingUp className="size-3" /> : <TrendingDown className="size-3" />}
+            {pos ? '+' : ''}
+            {value}%
+        </span>
+    );
+}
 
-function MiniLineChart() {
-    const width = 560;
-    const height = 180;
-    const padX = 30;
-    const padY = 20;
-    const innerW = width - padX * 2;
-    const innerH = height - padY * 2;
-    const max = Math.max(...chartData);
-    const min = Math.min(...chartData) - 1;
+// ── Dual Line Chart ────────────────────────────────────────────────────────
 
-    const points = chartData.map((v, i) => {
-        const x = padX + (i / (chartData.length - 1)) * innerW;
-        const y = padY + innerH - ((v - min) / (max - min)) * innerH;
-        return { x, y };
-    });
+function DualLineChart({ data }: { data: ComparisonPoint[] }) {
+    const [hovered, setHovered] = useState<number | null>(null);
+    const svgRef = useRef<SVGSVGElement>(null);
 
-    const pathD = points.map((point, i) => `${i === 0 ? 'M' : 'L'}${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
-    const areaD = `${pathD} L${points[points.length - 1].x},${height} L${points[0].x},${height} Z`;
+    if (data.length === 0) {
+        return <div className="flex h-40 items-center justify-center text-sm text-slate-300">Tidak ada data</div>;
+    }
+
+    const W = 620, H = 168, PX = 12, PY = 16;
+    const IW = W - PX * 2;
+    const IH = H - PY * 2 - 14; // 14 px for x-axis labels
+
+    const maxOrders = Math.max(...data.map((d) => Math.max(d.mkl_orders, d.idp_orders)), 1);
+    const gx = (i: number) => PX + (i / Math.max(data.length - 1, 1)) * IW;
+    const gy = (v: number) => PY + IH - (v / maxOrders) * IH;
+
+    const mklPts = data.map((d, i) => ({ x: gx(i), y: gy(d.mkl_orders) }));
+    const idpPts = data.map((d, i) => ({ x: gx(i), y: gy(d.idp_orders) }));
+
+    const toPath = (pts: { x: number; y: number }[]) =>
+        pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+    const floor = PY + IH;
+    const mklPath = toPath(mklPts);
+    const idpPath = toPath(idpPts);
+    const mklArea = `${mklPath} L${mklPts.at(-1)!.x},${floor} L${mklPts[0].x},${floor} Z`;
+    const idpArea = `${idpPath} L${idpPts.at(-1)!.x},${floor} L${idpPts[0].x},${floor} Z`;
+
+    const step = Math.max(1, Math.floor(data.length / 7));
+    const labelIdxs = data.reduce<number[]>((acc, _, i) => {
+        if (i % step === 0 || i === data.length - 1) acc.push(i);
+        return acc;
+    }, []);
+
+    const onMove = (e: React.MouseEvent<SVGSVGElement>) => {
+        if (!svgRef.current) return;
+        const rect = svgRef.current.getBoundingClientRect();
+        const relX = ((e.clientX - rect.left) / rect.width) * W;
+        let best = 0,
+            bestDx = Infinity;
+        data.forEach((_, i) => {
+            const dx = Math.abs(gx(i) - relX);
+            if (dx < bestDx) {
+                bestDx = dx;
+                best = i;
+            }
+        });
+        setHovered(best);
+    };
 
     return (
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="none">
+        <svg
+            ref={svgRef}
+            viewBox={`0 0 ${W} ${H}`}
+            className="w-full cursor-crosshair"
+            onMouseMove={onMove}
+            onMouseLeave={() => setHovered(null)}
+        >
             <defs>
-                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ec4899" stopOpacity="0.24" />
-                    <stop offset="100%" stopColor="#ec4899" stopOpacity="0.02" />
+                <linearGradient id="dlMklGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#ec4899" stopOpacity="0.15" />
+                    <stop offset="100%" stopColor="#ec4899" stopOpacity="0" />
+                </linearGradient>
+                <linearGradient id="dlIdpGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.12" />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0" />
                 </linearGradient>
             </defs>
 
+            {/* Grid */}
             {[0, 0.25, 0.5, 0.75, 1].map((t) => (
                 <line
                     key={t}
-                    x1={padX}
-                    y1={padY + innerH * (1 - t)}
-                    x2={width - padX}
-                    y2={padY + innerH * (1 - t)}
-                    stroke="#fce7f3"
+                    x1={PX}
+                    y1={PY + IH * (1 - t)}
+                    x2={W - PX}
+                    y2={PY + IH * (1 - t)}
+                    stroke="#f1f5f9"
                     strokeWidth="1"
                 />
             ))}
 
-            <path d={areaD} fill="url(#areaGrad)" />
-            <path d={pathD} fill="none" stroke="#ec4899" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+            {/* Area fills */}
+            <path d={idpArea} fill="url(#dlIdpGrad)" />
+            <path d={mklArea} fill="url(#dlMklGrad)" />
 
-            {points.map((point, i) => (
-                <circle key={i} cx={point.x} cy={point.y} r="4" fill="white" stroke="#ec4899" strokeWidth="2" />
-            ))}
+            {/* Lines */}
+            <path d={idpPath} fill="none" stroke="#f59e0b" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d={mklPath} fill="none" stroke="#ec4899" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
 
-            {points.map((point, i) => (
-                <text key={i} x={point.x} y={height - 4} fill="#f472b6" fontSize="10" textAnchor="middle">
-                    {chartMonths[i]}
+            {/* X-axis labels */}
+            {labelIdxs.map((i) => (
+                <text key={i} x={gx(i)} y={H - 2} fill="#94a3b8" fontSize="9" textAnchor="middle">
+                    {data[i].label}
                 </text>
             ))}
+
+            {/* Hover elements */}
+            {hovered !== null && (
+                <>
+                    <line
+                        x1={gx(hovered)}
+                        y1={PY}
+                        x2={gx(hovered)}
+                        y2={floor}
+                        stroke="#e2e8f0"
+                        strokeWidth="1"
+                        strokeDasharray="4 3"
+                    />
+                    <circle cx={mklPts[hovered].x} cy={mklPts[hovered].y} r="4" fill="white" stroke="#ec4899" strokeWidth="2" />
+                    <circle cx={idpPts[hovered].x} cy={idpPts[hovered].y} r="4" fill="white" stroke="#f59e0b" strokeWidth="2" />
+                    {(() => {
+                        const tx = Math.min(Math.max(gx(hovered) - 54, 4), W - 116);
+                        const minY = Math.min(mklPts[hovered].y, idpPts[hovered].y);
+                        const ty = Math.max(minY - 50, 4);
+                        return (
+                            <g pointerEvents="none">
+                                <rect x={tx} y={ty} width="112" height="42" rx="6" fill="white" stroke="#e2e8f0" strokeWidth="1" />
+                                <text x={tx + 8} y={ty + 14} fill="#94a3b8" fontSize="8.5">
+                                    {data[hovered].label}
+                                </text>
+                                <circle cx={tx + 8} cy={ty + 26} r="3" fill="#ec4899" />
+                                <text x={tx + 15} y={ty + 29} fill="#111827" fontSize="9" fontWeight="bold">
+                                    MKL: {data[hovered].mkl_orders}
+                                </text>
+                                <circle cx={tx + 65} cy={ty + 26} r="3" fill="#f59e0b" />
+                                <text x={tx + 72} y={ty + 29} fill="#111827" fontSize="9" fontWeight="bold">
+                                    IDP: {data[hovered].idp_orders}
+                                </text>
+                            </g>
+                        );
+                    })()}
+                </>
+            )}
         </svg>
     );
 }
 
-function getInitial(name: string) {
-    return name.charAt(0).toUpperCase();
+// ── Hourly Dual Bar Chart ──────────────────────────────────────────────────
+
+function HourlyChart({ data }: { data: ComparisonPoint[] }) {
+    const [hovered, setHovered] = useState<number | null>(null);
+
+    const W = 640, H = 128, PX = 10, PY = 10;
+    const IW = W - PX * 2;
+    const IH = H - PY * 2 - 16;
+    const maxOrders = Math.max(...data.map((d) => Math.max(d.mkl_orders, d.idp_orders)), 1);
+
+    const slotW = IW / 24;
+    const barW = slotW * 0.38;
+    const gap = slotW * 0.07;
+
+    return (
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full">
+            {/* Grid */}
+            {[0, 0.5, 1].map((t) => (
+                <line key={t} x1={PX} y1={PY + IH * (1 - t)} x2={W - PX} y2={PY + IH * (1 - t)} stroke="#f1f5f9" strokeWidth="1" />
+            ))}
+
+            {data.map((d, i) => {
+                const slotX = PX + i * slotW;
+                const mklH = (d.mkl_orders / maxOrders) * IH;
+                const idpH = (d.idp_orders / maxOrders) * IH;
+                const mklX = slotX + gap;
+                const idpX = mklX + barW + gap * 0.5;
+                const floor = PY + IH;
+                const isHov = hovered === i;
+                const dimmed = hovered !== null && !isHov;
+
+                return (
+                    <g key={i} onMouseEnter={() => setHovered(i)} onMouseLeave={() => setHovered(null)}>
+                        {/* Hover hit area */}
+                        <rect x={slotX} y={PY} width={slotW} height={IH} fill="transparent" />
+
+                        {mklH > 0 && (
+                            <rect
+                                x={mklX}
+                                y={floor - mklH}
+                                width={barW}
+                                height={mklH}
+                                rx="1.5"
+                                fill={isHov ? '#db2777' : '#ec4899'}
+                                opacity={dimmed ? 0.3 : 1}
+                            />
+                        )}
+                        {idpH > 0 && (
+                            <rect
+                                x={idpX}
+                                y={floor - idpH}
+                                width={barW}
+                                height={idpH}
+                                rx="1.5"
+                                fill={isHov ? '#d97706' : '#f59e0b'}
+                                opacity={dimmed ? 0.3 : 1}
+                            />
+                        )}
+
+                        {/* X-axis label every 4 hours */}
+                        {i % 4 === 0 && (
+                            <text x={slotX + slotW / 2} y={H - 2} fill="#94a3b8" fontSize="8.5" textAnchor="middle">
+                                {d.label}
+                            </text>
+                        )}
+
+                        {/* Tooltip */}
+                        {isHov && (d.mkl_orders > 0 || d.idp_orders > 0) &&
+                            (() => {
+                                const tx = Math.min(Math.max(slotX - 44, 4), W - 100);
+                                return (
+                                    <g pointerEvents="none">
+                                        <rect x={tx} y={4} width="96" height="40" rx="5" fill="white" stroke="#e2e8f0" strokeWidth="1" />
+                                        <text x={tx + 6} y={16} fill="#94a3b8" fontSize="8.5">
+                                            {d.label}
+                                        </text>
+                                        <circle cx={tx + 7} cy={26} r="3" fill="#ec4899" />
+                                        <text x={tx + 13} y={29} fill="#111827" fontSize="9" fontWeight="bold">
+                                            MKL: {d.mkl_orders}
+                                        </text>
+                                        <circle cx={tx + 55} cy={26} r="3" fill="#f59e0b" />
+                                        <text x={tx + 61} y={29} fill="#111827" fontSize="9" fontWeight="bold">
+                                            IDP: {d.idp_orders}
+                                        </text>
+                                    </g>
+                                );
+                            })()}
+                    </g>
+                );
+            })}
+        </svg>
+    );
 }
 
+// ── Dashboard ──────────────────────────────────────────────────────────────
+
 export default function Dashboard() {
-    const { auth } = usePage<{ auth: Auth }>().props;
-    const userName = auth?.user?.name ?? '';
-    const firstName = userName.split(' ')[0] || 'Admin';
+    const { auth, mkl, idp, comparisonDaily, comparisonHourly } = usePage().props as unknown as PageProps;
+    const firstName = (auth?.user?.name ?? '').split(' ')[0] || 'Admin';
+
+    const combinedTodayOrders  = (mkl?.today_orders  ?? 0) + (idp?.today_orders  ?? 0);
+    const combinedMonthOrders  = (mkl?.total_orders   ?? 0) + (idp?.total_orders   ?? 0);
+    const combinedMonthRevenue = (mkl?.total_revenue  ?? 0) + (idp?.total_revenue  ?? 0);
+
+    const chartTotalMkl = comparisonDaily?.reduce((s, d) => s + d.mkl_orders, 0) ?? 0;
+    const chartTotalIdp = comparisonDaily?.reduce((s, d) => s + d.idp_orders, 0) ?? 0;
+
+    const kpiCards = [
+        {
+            label: 'MKL — ORDER BULAN INI',
+            value: (mkl?.total_orders ?? 0).toLocaleString(),
+            sub: `Hari ini: ${mkl?.today_orders ?? 0} order`,
+            growth: mkl?.order_growth ?? 0,
+            accent: 'border-pink-100/70',
+            blob: 'bg-pink-50/70',
+        },
+        {
+            label: 'MKL — REVENUE BULAN INI',
+            value: fmt(mkl?.total_revenue ?? 0),
+            sub: `AOV: ${mkl?.total_orders ? fmt(Math.round((mkl.total_revenue ?? 0) / mkl.total_orders)) : '-'}`,
+            growth: mkl?.revenue_growth ?? 0,
+            accent: 'border-pink-100/70',
+            blob: 'bg-pink-50/70',
+        },
+        {
+            label: 'IDP — ORDER BULAN INI',
+            value: (idp?.total_orders ?? 0).toLocaleString(),
+            sub: `Hari ini: ${idp?.today_orders ?? 0} order`,
+            growth: idp?.order_growth ?? 0,
+            accent: 'border-amber-100/70',
+            blob: 'bg-amber-50/60',
+        },
+        {
+            label: 'IDP — REVENUE BULAN INI',
+            value: fmt(idp?.total_revenue ?? 0),
+            sub: `AOV: ${idp?.total_orders ? fmt(Math.round((idp.total_revenue ?? 0) / idp.total_orders)) : '-'}`,
+            growth: idp?.revenue_growth ?? 0,
+            accent: 'border-amber-100/70',
+            blob: 'bg-amber-50/60',
+        },
+    ];
 
     return (
         <>
             <Head title="Dashboard" />
 
-            <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden bg-transparent p-4 lg:p-8">
-                <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.12),_transparent_60%)]" />
+            <div className="relative min-h-[calc(100vh-4rem)] bg-transparent p-4 lg:p-8">
+                <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.10),_transparent_60%)]" />
 
                 <div className="relative z-10 flex flex-col gap-6">
-                    <section className="grid gap-6 xl:grid-cols-[1.55fr_0.95fr]">
-                        <div className="relative overflow-hidden rounded-[2rem] border border-pink-100/70 bg-[linear-gradient(135deg,#fffefe_0%,#fff4f7_45%,#fff8ef_100%)] p-7 shadow-[0_24px_80px_-45px_rgba(190,24,93,0.45)]">
-                            <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(250,204,21,0.24),_transparent_55%)]" />
 
-                            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                                <div className="max-w-2xl">
-                                    <div className="inline-flex items-center gap-2 rounded-full border border-pink-100 bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-pink-500">
-                                        Daily Executive Overview
-                                    </div>
-                                    <h1 className="mt-4 text-3xl font-black tracking-tight text-[#4c0519] sm:text-4xl">
-                                        Selamat datang, {firstName}. Fokus bisnis hari ini terlihat sehat dan terkendali.
-                                    </h1>
-                                    <p className="mt-3 max-w-xl text-sm leading-6 text-[#9d174d] sm:text-base">
-                                        Omset, akuisisi customer, dan fulfillment bergerak positif. Ada sedikit tekanan di growth order yang perlu ditangani dari sisi conversion funnel.
-                                    </p>
+                    {/* ── Hero ── */}
+                    <section className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+                        <div className="relative overflow-hidden rounded-[2rem] border border-pink-100/70 bg-[linear-gradient(135deg,#fffefe_0%,#fff4f7_45%,#fff8ef_100%)] p-7 shadow-[0_24px_80px_-45px_rgba(190,24,93,0.35)]">
+                            <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_top_right,_rgba(250,204,21,0.20),_transparent_55%)]" />
+                            <div className="relative">
+                                <div className="inline-flex items-center gap-2 rounded-full border border-pink-100 bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-pink-500">
+                                    Executive Dashboard
                                 </div>
-
-                                <div className="grid gap-3 rounded-[1.5rem] border border-white/70 bg-white/80 p-4 shadow-sm backdrop-blur sm:min-w-[280px]">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-pink-400">
-                                                Monthly Revenue
-                                            </p>
-                                            <p className="mt-2 text-3xl font-black text-[#111827]">Rp199.5M</p>
-                                        </div>
-                                        <div className="rounded-2xl bg-pink-50 p-3 text-pink-600">
-                                            <ArrowUpRight className="size-6" />
-                                        </div>
+                                <h1 className="mt-4 text-3xl font-black tracking-tight text-[#4c0519] sm:text-4xl">
+                                    Selamat datang, {firstName}.
+                                </h1>
+                                <p className="mt-2 text-sm leading-6 text-[#9d174d]">
+                                    Data real-time dari Makenliving &amp; IDPhotobook.
+                                </p>
+                                <div className="mt-6 flex flex-wrap gap-3">
+                                    <div className="rounded-2xl border border-pink-100 bg-white/80 px-5 py-3 shadow-sm">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-pink-400">
+                                            Order Hari Ini
+                                        </p>
+                                        <p className="mt-1 text-2xl font-black text-[#111827]">{combinedTodayOrders}</p>
                                     </div>
-                                    <div className="flex items-center justify-between rounded-2xl bg-pink-50/70 px-4 py-3">
-                                        <span className="text-sm font-semibold text-[#831843]">Progress target</span>
-                                        <span className="text-sm font-black text-pink-600">92%</span>
+                                    <div className="rounded-2xl border border-pink-100 bg-white/80 px-5 py-3 shadow-sm">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-pink-400">
+                                            Order Bulan Ini
+                                        </p>
+                                        <p className="mt-1 text-2xl font-black text-[#111827]">
+                                            {combinedMonthOrders.toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-2xl border border-amber-100 bg-white/80 px-5 py-3 shadow-sm">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-amber-500">
+                                            Revenue Bulan Ini
+                                        </p>
+                                        <p className="mt-1 text-2xl font-black text-[#111827]">
+                                            {fmt(combinedMonthRevenue)}
+                                        </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-                            {insights.map((item) => (
-                                <div
-                                    key={item.title}
-                                    className="rounded-[1.5rem] border border-pink-100/70 bg-white/90 p-5 shadow-sm"
-                                >
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div>
-                                            <p className="text-[11px] font-bold uppercase tracking-[0.22em] text-pink-400">
-                                                {item.title}
-                                            </p>
-                                            <p className="mt-3 text-2xl font-black text-[#111827]">{item.value}</p>
-                                        </div>
-                                        <div className={`rounded-2xl p-3 ${item.tone}`}>
-                                            <item.icon className="size-5" />
-                                        </div>
+                        {/* Service mini-summary */}
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+                            <div className="rounded-[1.5rem] border border-pink-100/70 bg-white/90 p-5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="h-3 w-3 rounded-full bg-pink-500" />
+                                        <p className="text-[11px] font-bold uppercase tracking-widest text-pink-500">
+                                            Makenliving
+                                        </p>
                                     </div>
-                                    <p className="mt-4 text-sm leading-6 text-[#9d174d]">{item.detail}</p>
+                                    <GrowthBadge value={mkl?.order_growth ?? 0} />
                                 </div>
-                            ))}
+                                <p className="mt-3 text-2xl font-black text-[#111827]">
+                                    {(mkl?.total_orders ?? 0).toLocaleString()}{' '}
+                                    <span className="text-sm font-semibold text-[#9d174d]">order</span>
+                                </p>
+                                <p className="text-sm font-semibold text-[#9d174d]">{fmt(mkl?.total_revenue ?? 0)}</p>
+                                <p className="mt-2 text-xs text-pink-400">Hari ini: {mkl?.today_orders ?? 0} order</p>
+                            </div>
+                            <div className="rounded-[1.5rem] border border-amber-100/70 bg-white/90 p-5">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <span className="h-3 w-3 rounded-full bg-amber-400" />
+                                        <p className="text-[11px] font-bold uppercase tracking-widest text-amber-600">
+                                            IDPhotobook
+                                        </p>
+                                    </div>
+                                    <GrowthBadge value={idp?.order_growth ?? 0} />
+                                </div>
+                                <p className="mt-3 text-2xl font-black text-[#111827]">
+                                    {(idp?.total_orders ?? 0).toLocaleString()}{' '}
+                                    <span className="text-sm font-semibold text-[#92400e]">order</span>
+                                </p>
+                                <p className="text-sm font-semibold text-[#92400e]">{fmt(idp?.total_revenue ?? 0)}</p>
+                                <p className="mt-2 text-xs text-amber-400">Hari ini: {idp?.today_orders ?? 0} order</p>
+                            </div>
                         </div>
                     </section>
 
+                    {/* ── KPI Cards ── */}
                     <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-                        {stats.map((item) => (
+                        {kpiCards.map((card) => (
                             <div
-                                key={item.label}
-                                className="group relative overflow-hidden rounded-[1.75rem] border border-pink-100/60 bg-white/95 p-6 shadow-[0_24px_60px_-50px_rgba(15,23,42,0.45)] transition-transform duration-200 hover:-translate-y-1"
+                                key={card.label}
+                                className={`relative overflow-hidden rounded-[1.75rem] border ${card.accent} bg-white/95 p-6 shadow-[0_24px_60px_-50px_rgba(15,23,42,0.4)] transition-transform duration-200 hover:-translate-y-1`}
                             >
-                                <div className="absolute right-0 top-0 h-28 w-28 rounded-full bg-pink-50/70 blur-2xl" />
-
-                                <div className="relative flex h-full flex-col justify-between gap-6">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div className={`inline-flex h-12 w-12 items-center justify-center rounded-2xl ${item.bg}`}>
-                                            <item.icon className={`h-6 w-6 ${item.iconColor}`} />
-                                        </div>
-
-                                        {item.badge ? (
-                                            <span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${item.badgeColor}`}>
-                                                {item.badge}
-                                            </span>
-                                        ) : (
-                                            <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-600">
-                                                {item.change}
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
-                                            {item.label}
+                                <div className={`absolute right-0 top-0 h-24 w-24 rounded-full ${card.blob} blur-2xl`} />
+                                <div className="relative">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-pink-400">
+                                            {card.label}
                                         </p>
-                                        <p className="mt-3 text-3xl font-black tracking-tight text-[#111827]">
-                                            {item.value}
-                                        </p>
-                                        <p className="mt-2 text-sm text-[#9d174d]">{item.note}</p>
+                                        <GrowthBadge value={card.growth} />
                                     </div>
+                                    <p className="mt-4 text-3xl font-black tracking-tight text-[#111827]">{card.value}</p>
+                                    <p className="mt-2 text-xs font-semibold text-[#9d174d]">{card.sub}</p>
                                 </div>
                             </div>
                         ))}
                     </section>
 
-                    <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.6fr_0.9fr]">
-                        <div className="rounded-[2rem] border border-pink-100/70 bg-white/95 p-6 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.4)]">
-                            <div className="flex flex-col gap-4 border-b border-pink-100/70 pb-5 sm:flex-row sm:items-center sm:justify-between">
-                                <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
-                                        Revenue Analytics
-                                    </p>
-                                    <h2 className="mt-2 text-2xl font-black text-[#4c0519]">
-                                        Analisis penjualan bulanan
-                                    </h2>
-                                </div>
-
-                                <div className="flex gap-2 rounded-full bg-pink-50 p-1">
-                                    <button className="rounded-full bg-white px-5 py-2 text-xs font-bold text-[#6E1131] shadow-sm">
-                                        Bulan Ini
-                                    </button>
-                                    <button className="rounded-full px-5 py-2 text-xs font-bold text-pink-300">
-                                        Semester
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-                                <div className="rounded-[1.5rem] bg-[linear-gradient(180deg,#fff7fa_0%,#ffffff_100%)] p-5">
-                                    <div className="mb-5 flex items-center justify-between">
-                                        <div>
-                                            <p className="text-sm font-semibold text-[#831843]">Omset bersih</p>
-                                            <p className="mt-1 text-3xl font-black text-[#111827]">Rp199.5M</p>
-                                        </div>
-                                        <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-600">
-                                            +12.4%
-                                        </div>
-                                    </div>
-
-                                    <div className="relative w-full">
-                                        <div className="absolute bottom-6 left-0 top-0 flex flex-col justify-between text-[10px] font-bold text-gray-400">
-                                            <span>14M</span>
-                                            <span>12M</span>
-                                            <span>10M</span>
-                                            <span>8M</span>
-                                            <span>6M</span>
-                                            <span>4M</span>
-                                        </div>
-                                        <div className="pl-8 pt-2">
-                                            <MiniLineChart />
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="grid gap-4">
-                                    <div className="rounded-[1.5rem] border border-pink-100 bg-pink-50/60 p-5">
-                                        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
-                                            Best Channel
-                                        </p>
-                                        <p className="mt-3 text-xl font-black text-[#4c0519]">Shopee</p>
-                                        <p className="mt-2 text-sm leading-6 text-[#9d174d]">
-                                            Menyumbang 38% dari total order dengan peningkatan konversi paling baik minggu ini.
-                                        </p>
-                                    </div>
-
-                                    <div className="rounded-[1.5rem] border border-pink-100 bg-white p-5">
-                                        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
-                                            Attention Needed
-                                        </p>
-                                        <p className="mt-3 text-xl font-black text-[#4c0519]">Growth Order</p>
-                                        <p className="mt-2 text-sm leading-6 text-[#9d174d]">
-                                            Retensi checkout menurun. Prioritaskan follow-up lead dan review funnel pembayaran sore ini.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid gap-6">
-                            <div className="rounded-[2rem] border border-pink-100/70 bg-white/95 p-6 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.4)]">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
-                                            Today Agenda
-                                        </p>
-                                        <h2 className="mt-2 text-xl font-black text-[#4c0519]">Prioritas hari ini</h2>
-                                    </div>
-                                    <div className="rounded-2xl bg-pink-50 p-3 text-pink-600">
-                                        <Clock3 className="size-5" />
-                                    </div>
-                                </div>
-
-                                <div className="mt-6 space-y-4">
-                                    {agenda.map((item) => (
-                                        <div
-                                            key={item.title}
-                                            className="flex items-start gap-4 rounded-[1.25rem] border border-pink-100/70 bg-pink-50/40 px-4 py-4"
-                                        >
-                                            <div className="rounded-xl bg-white px-3 py-2 text-sm font-black text-[#831843] shadow-sm">
-                                                {item.time}
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-sm font-bold text-[#111827]">{item.title}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="rounded-[2rem] border border-pink-100/70 bg-white/95 p-6 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.4)]">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
-                                            Status Ringkas
-                                        </p>
-                                        <h2 className="mt-2 text-xl font-black text-[#4c0519]">Operational health</h2>
-                                    </div>
-                                    <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-sm font-bold text-emerald-600">
-                                        Good
-                                    </div>
-                                </div>
-
-                                <div className="mt-6 space-y-4">
-                                    <div className="flex items-center justify-between rounded-2xl bg-pink-50/60 px-4 py-3">
-                                        <span className="text-sm font-semibold text-[#831843]">Fulfillment</span>
-                                        <span className="text-sm font-black text-[#111827]">96.1%</span>
-                                    </div>
-                                    <div className="flex items-center justify-between rounded-2xl bg-pink-50/60 px-4 py-3">
-                                        <span className="text-sm font-semibold text-[#831843]">Customer response</span>
-                                        <span className="text-sm font-black text-[#111827]">14 min</span>
-                                    </div>
-                                    <div className="flex items-center justify-between rounded-2xl bg-pink-50/60 px-4 py-3">
-                                        <span className="text-sm font-semibold text-[#831843]">Return rate</span>
-                                        <span className="text-sm font-black text-[#111827]">1.8%</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <section className="rounded-[2rem] border border-pink-100/70 bg-white/95 p-6 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.4)]">
-                        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    {/* ── Daily Comparison Chart ── */}
+                    <section className="rounded-[2rem] border border-pink-100/70 bg-white/95 p-6 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.35)]">
+                        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
                                 <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
-                                    Transaction Feed
+                                    Perbandingan Order
                                 </p>
-                                <h2 className="mt-2 text-2xl font-black text-[#4c0519]">Transaksi terbaru</h2>
+                                <h2 className="mt-1 text-xl font-black text-[#4c0519]">30 Hari Terakhir</h2>
                             </div>
-                            <a
-                                href="#"
-                                className="inline-flex items-center gap-2 text-sm font-bold text-pink-500 transition-colors hover:text-pink-700"
-                            >
-                                Lihat semua
-                                <ArrowUpRight className="size-4" />
-                            </a>
+                            <div className="flex items-center gap-5 text-xs font-bold text-[#374151]">
+                                <span className="flex items-center gap-2">
+                                    <span className="inline-block h-2.5 w-6 rounded-full bg-pink-500" />
+                                    Makenliving ({chartTotalMkl.toLocaleString()})
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <span className="inline-block h-2.5 w-6 rounded-full bg-amber-400" />
+                                    IDPhotobook ({chartTotalIdp.toLocaleString()})
+                                </span>
+                            </div>
                         </div>
-
-                        <div className="grid gap-4">
-                            {transactions.map((transaction, i) => (
-                                <div
-                                    key={i}
-                                    className="grid gap-4 rounded-[1.5rem] border border-pink-100/70 bg-[linear-gradient(180deg,#fffefe_0%,#fff7fa_100%)] p-4 sm:grid-cols-[auto_1fr_auto] sm:items-center"
-                                >
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-pink-100 font-bold text-[#6E1131]">
-                                        {getInitial(transaction.name)}
-                                    </div>
-                                    <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <p className="truncate text-sm font-black text-[#111827]">{transaction.name}</p>
-                                            {transaction.platform && (
-                                                <span className="rounded-full bg-yellow-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-yellow-700">
-                                                    {transaction.platform}
-                                                </span>
-                                            )}
-                                        </div>
-                                        <p className="mt-1 text-sm text-[#9d174d]">{transaction.code}</p>
-                                        <p className="mt-1 text-xs font-semibold text-pink-300">{transaction.time}</p>
-                                    </div>
-                                    <div className="flex flex-col items-start gap-2 sm:items-end">
-                                        <span className="text-base font-black text-[#111827]">{transaction.amount}</span>
-                                        <span
-                                            className={`rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] ${transaction.statusBg} ${transaction.statusColor}`}
-                                        >
-                                            {transaction.status}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <DualLineChart data={comparisonDaily ?? []} />
                     </section>
+
+                    {/* ── Hourly Today Chart ── */}
+                    <section className="rounded-[2rem] border border-pink-100/70 bg-white/95 p-6 shadow-[0_24px_70px_-55px_rgba(15,23,42,0.35)]">
+                        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
+                                    Distribusi Per Jam
+                                </p>
+                                <h2 className="mt-1 text-xl font-black text-[#4c0519]">Hari Ini</h2>
+                            </div>
+                            <div className="flex items-center gap-5 text-xs font-bold text-[#374151]">
+                                <span className="flex items-center gap-2">
+                                    <span className="inline-block h-2.5 w-5 rounded bg-pink-500" />
+                                    Makenliving
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <span className="inline-block h-2.5 w-5 rounded bg-amber-400" />
+                                    IDPhotobook
+                                </span>
+                            </div>
+                        </div>
+                        <HourlyChart data={comparisonHourly ?? []} />
+                    </section>
+
                 </div>
             </div>
         </>

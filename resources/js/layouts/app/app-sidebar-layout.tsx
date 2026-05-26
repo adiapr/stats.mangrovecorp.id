@@ -69,9 +69,9 @@ export default function AppSidebarLayout({
     return (
         <AppShell variant="sidebar">
             <AppSidebar />
-            <AppContent variant="sidebar" className="relative flex flex-col overflow-hidden bg-[#fff5f7]">
+            <AppContent variant="sidebar" className="relative flex flex-col bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_50%,#f1f5f9_100%)]">
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
-                <main className="flex-1 overflow-y-auto bg-blue-50/20 p-6 pb-32 md:p-8 md:pb-10">
+                <main className="flex-1 p-6 pb-32 md:p-8 md:pb-10">
                     {children}
                 </main>
                 <MobileBottomNav />

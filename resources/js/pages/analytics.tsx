@@ -151,7 +151,7 @@ function DailyTrendChart({ data }: { data: DayItem[] }) {
 
     if (data.length === 0) {
         return (
-            <div className="flex h-40 items-center justify-center text-sm text-pink-300">
+            <div className="flex h-40 items-center justify-center text-sm text-amber-300">
                 Tidak ada data pada periode ini
             </div>
         );
@@ -187,8 +187,8 @@ function DailyTrendChart({ data }: { data: DayItem[] }) {
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full" preserveAspectRatio="none">
             <defs>
                 <linearGradient id="trendGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#ec4899" stopOpacity="0.22" />
-                    <stop offset="100%" stopColor="#ec4899" stopOpacity="0.02" />
+                    <stop offset="0%" stopColor="#f59e0b" stopOpacity="0.22" />
+                    <stop offset="100%" stopColor="#f59e0b" stopOpacity="0.02" />
                 </linearGradient>
             </defs>
 
@@ -199,13 +199,13 @@ function DailyTrendChart({ data }: { data: DayItem[] }) {
                     y1={padY + innerH * (1 - t)}
                     x2={width - padX}
                     y2={padY + innerH * (1 - t)}
-                    stroke="#fce7f3"
+                    stroke="#fef3c7"
                     strokeWidth="1"
                 />
             ))}
 
             <path d={areaD} fill="url(#trendGrad)" />
-            <path d={pathD} fill="none" stroke="#ec4899" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+            <path d={pathD} fill="none" stroke="#f59e0b" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
 
             {/* Vertical hover line */}
             {hovered !== null && (
@@ -214,7 +214,7 @@ function DailyTrendChart({ data }: { data: DayItem[] }) {
                     y1={padY}
                     x2={points[hovered].x}
                     y2={height - 12}
-                    stroke="#ec4899"
+                    stroke="#f59e0b"
                     strokeWidth="1"
                     strokeDasharray="3 3"
                     opacity="0.5"
@@ -228,8 +228,8 @@ function DailyTrendChart({ data }: { data: DayItem[] }) {
                         cx={p.x}
                         cy={p.y}
                         r={hovered === i ? 5 : 3.5}
-                        fill={hovered === i ? '#ec4899' : 'white'}
-                        stroke="#ec4899"
+                        fill={hovered === i ? '#f59e0b' : 'white'}
+                        stroke="#f59e0b"
                         strokeWidth="2"
                         style={{ transition: 'r 0.1s, fill 0.1s' }}
                     />
@@ -260,19 +260,19 @@ function DailyTrendChart({ data }: { data: DayItem[] }) {
                             width={TW}
                             height={TH}
                             rx="6"
-                            fill="#831843"
+                            fill="#78350f"
                             opacity="0.93"
                         />
                         {/* small arrow */}
                         <polygon
                             points={`${p.x - 5},${ty + TH} ${p.x + 5},${ty + TH} ${p.x},${ty + TH + 6}`}
-                            fill="#831843"
+                            fill="#78350f"
                             opacity="0.93"
                         />
                         <text
                             x={tx + TW / 2}
                             y={ty + 13}
-                            fill="#fce7f3"
+                            fill="#fef3c7"
                             fontSize="9"
                             fontWeight="600"
                             textAnchor="middle"
@@ -294,7 +294,7 @@ function DailyTrendChart({ data }: { data: DayItem[] }) {
             })()}
 
             {labelPoints.map((p, i) => (
-                <text key={i} x={p.x} y={height - 2} fill="#f472b6" fontSize="9" textAnchor="middle">
+                <text key={i} x={p.x} y={height - 2} fill="#fbbf24" fontSize="9" textAnchor="middle">
                     {p.label}
                 </text>
             ))}
@@ -306,7 +306,7 @@ function DailyTrendChart({ data }: { data: DayItem[] }) {
 
 function PlatformBars({ data }: { data: PlatformItem[] }) {
     if (data.length === 0) {
-        return <div className="flex h-40 items-center justify-center text-sm text-pink-300">Tidak ada data</div>;
+        return <div className="flex h-40 items-center justify-center text-sm text-amber-300">Tidak ada data</div>;
     }
 
     const maxCount = Math.max(...data.map((d) => d.count), 1);
@@ -319,11 +319,11 @@ function PlatformBars({ data }: { data: PlatformItem[] }) {
                 const barWidth = Math.round((item.count / maxCount) * 100);
                 return (
                     <div key={item.platform} className="flex items-center gap-3">
-                        <div className="w-24 shrink-0 truncate text-right text-xs font-semibold text-[#831843]">
+                        <div className="w-24 shrink-0 truncate text-right text-xs font-semibold text-[#78350f]">
                             {item.platform}
                         </div>
                         <div className="flex-1">
-                            <div className="h-5 overflow-hidden rounded-full bg-pink-50">
+                            <div className="h-5 overflow-hidden rounded-full bg-amber-50">
                                 <div
                                     className={`h-full rounded-full ${platformColor(item.platform)} transition-all duration-500`}
                                     style={{ width: `${barWidth}%` }}
@@ -333,7 +333,7 @@ function PlatformBars({ data }: { data: PlatformItem[] }) {
                         <div className="w-12 shrink-0 text-right text-xs font-black text-[#111827]">
                             {item.count.toLocaleString('id-ID')}
                         </div>
-                        <div className="w-10 shrink-0 text-right text-[10px] font-bold text-pink-400">{pct}%</div>
+                        <div className="w-10 shrink-0 text-right text-[10px] font-bold text-amber-400">{pct}%</div>
                     </div>
                 );
             })}
@@ -365,11 +365,11 @@ function LeaderColumn({
     const maxCount = Math.max(...(data.map((d) => d.count)), 1);
 
     return (
-        <div className="flex flex-col rounded-[2rem] border border-pink-100/70 bg-white/95 p-6 shadow-sm">
+        <div className="flex flex-col rounded-[2rem] border border-amber-100/70 bg-white/95 p-6 shadow-sm">
             <div className="mb-5 flex items-start justify-between gap-3">
                 <div>
-                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">{subtitle}</p>
-                    <h2 className="mt-1.5 text-xl font-black text-[#4c0519]">{title}</h2>
+                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-amber-400">{subtitle}</p>
+                    <h2 className="mt-1.5 text-xl font-black text-[#451a03]">{title}</h2>
                 </div>
                 <div className={`rounded-2xl p-3 ${iconBg}`}>
                     <Icon className="size-5" />
@@ -377,20 +377,20 @@ function LeaderColumn({
             </div>
 
             {data.length === 0 ? (
-                <div className="flex flex-1 items-center justify-center py-8 text-sm text-pink-300">
+                <div className="flex flex-1 items-center justify-center py-8 text-sm text-amber-300">
                     Belum ada data pada periode ini
                 </div>
             ) : (
                 <div className="space-y-2.5">
                     {data.map((entry) => {
-                        const style = RANK_STYLES[entry.rank] ?? { badge: 'bg-pink-50 text-pink-600', text: 'text-pink-400', icon: Medal };
+                        const style = RANK_STYLES[entry.rank] ?? { badge: 'bg-amber-50 text-amber-600', text: 'text-amber-400', icon: Medal };
                         const RankIcon = style.icon;
                         const barW = Math.round((entry.count / maxCount) * 100);
 
                         return (
                             <div
                                 key={entry.rank}
-                                className={`flex items-center gap-3 rounded-2xl px-3.5 py-3 transition-all ${entry.rank === 1 ? 'bg-yellow-50 ring-1 ring-yellow-200' : 'bg-pink-50/50'}`}
+                                className={`flex items-center gap-3 rounded-2xl px-3.5 py-3 transition-all ${entry.rank === 1 ? 'bg-yellow-50 ring-1 ring-yellow-200' : 'bg-amber-50/50'}`}
                             >
                                 {/* Rank badge */}
                                 <div className={`flex size-7 shrink-0 items-center justify-center rounded-xl text-[11px] font-black ${style.badge}`}>
@@ -400,9 +400,9 @@ function LeaderColumn({
                                 {/* Name + bar */}
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-sm font-black text-[#111827]">{entry.name}</p>
-                                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-pink-100">
+                                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-amber-100">
                                         <div
-                                            className={`h-full rounded-full transition-all duration-700 ${entry.rank === 1 ? 'bg-yellow-400' : 'bg-pink-400'}`}
+                                            className={`h-full rounded-full transition-all duration-700 ${entry.rank === 1 ? 'bg-yellow-400' : 'bg-amber-400'}`}
                                             style={{ width: `${barW}%` }}
                                         />
                                     </div>
@@ -413,7 +413,7 @@ function LeaderColumn({
                                     <span className="text-sm font-black text-[#111827]">
                                         {entry.count.toLocaleString('id-ID')}
                                     </span>
-                                    <p className="text-[10px] text-pink-400">order</p>
+                                    <p className="text-[10px] text-amber-400">order</p>
                                 </div>
                             </div>
                         );
@@ -458,21 +458,21 @@ export default function Analytics() {
             <Head title="Analytics — IDPhotobook" />
 
             <div className="relative min-h-[calc(100vh-4rem)] bg-transparent p-4 lg:p-8">
-                <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,_rgba(244,114,182,0.1),_transparent_60%)]" />
+                <div className="absolute inset-x-0 top-0 h-64 bg-[radial-gradient(circle_at_top,_rgba(251,191,36,0.1),_transparent_60%)]" />
 
                 <div className="relative z-10 flex flex-col gap-6">
 
                     {/* ── Header ──────────────────────────────────────────── */}
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <div>
-                            <div className="inline-flex items-center gap-2 rounded-full border border-pink-100 bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-pink-500">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-amber-100 bg-white/80 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.24em] text-amber-500">
                                 <BarChart3 className="size-3" />
                                 IDPhotobook Analytics
                             </div>
-                            <h1 className="mt-3 text-2xl font-black tracking-tight text-[#4c0519] sm:text-3xl">
+                            <h1 className="mt-3 text-2xl font-black tracking-tight text-[#451a03] sm:text-3xl">
                                 Dashboard Analitik Order
                             </h1>
-                            <p className="mt-1 text-sm text-[#9d174d]">
+                            <p className="mt-1 text-sm text-[#92400e]">
                                 {periodStart} — {periodEnd} ·{' '}
                                 <span className="font-semibold">{totalOrdersTrend.toLocaleString('id-ID')} orders</span>
                             </p>
@@ -487,8 +487,8 @@ export default function Analytics() {
                                         onClick={() => applyPeriod(opt.value)}
                                         className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
                                             period === opt.value && !showCustom
-                                                ? 'bg-[#6E1131] text-white shadow-sm'
-                                                : 'bg-pink-50 text-[#9d174d] hover:bg-pink-100'
+                                                ? 'bg-[#b45309] text-white shadow-sm'
+                                                : 'bg-amber-50 text-[#92400e] hover:bg-amber-100'
                                         }`}
                                     >
                                         {opt.label}
@@ -498,8 +498,8 @@ export default function Analytics() {
                                     onClick={() => applyPeriod('custom')}
                                     className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition-all ${
                                         showCustom
-                                            ? 'bg-[#6E1131] text-white shadow-sm'
-                                            : 'bg-pink-50 text-[#9d174d] hover:bg-pink-100'
+                                            ? 'bg-[#b45309] text-white shadow-sm'
+                                            : 'bg-amber-50 text-[#92400e] hover:bg-amber-100'
                                     }`}
                                 >
                                     <CalendarDays className="size-3" />
@@ -507,24 +507,24 @@ export default function Analytics() {
                                 </button>
                             </div>
                             {showCustom && (
-                                <div className="flex items-center gap-2 rounded-2xl border border-pink-100 bg-white/90 px-3 py-2 shadow-sm">
-                                    <CalendarDays className="size-4 shrink-0 text-pink-400" />
+                                <div className="flex items-center gap-2 rounded-2xl border border-amber-100 bg-white/90 px-3 py-2 shadow-sm">
+                                    <CalendarDays className="size-4 shrink-0 text-amber-400" />
                                     <input
                                         type="date"
                                         value={customStart}
                                         onChange={(e) => setCustomStart(e.target.value)}
-                                        className="w-32 text-xs font-semibold text-[#4c0519] outline-none"
+                                        className="w-32 text-xs font-semibold text-[#451a03] outline-none"
                                     />
-                                    <span className="text-xs text-pink-300">—</span>
+                                    <span className="text-xs text-amber-300">—</span>
                                     <input
                                         type="date"
                                         value={customEnd}
                                         onChange={(e) => setCustomEnd(e.target.value)}
-                                        className="w-32 text-xs font-semibold text-[#4c0519] outline-none"
+                                        className="w-32 text-xs font-semibold text-[#451a03] outline-none"
                                     />
                                     <button
                                         onClick={applyCustom}
-                                        className="rounded-xl bg-[#6E1131] px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-pink-800"
+                                        className="rounded-xl bg-[#b45309] px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-amber-700"
                                     >
                                         Terapkan
                                     </button>
@@ -536,10 +536,10 @@ export default function Analytics() {
                     {/* ── KPI Cards ────────────────────────────────────────── */}
                     <section className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
                         {/* Total Orders */}
-                        <div className="col-span-1 rounded-[1.75rem] border border-pink-100/60 bg-white/95 p-5 shadow-sm">
+                        <div className="col-span-1 rounded-[1.75rem] border border-amber-100/60 bg-white/95 p-5 shadow-sm">
                             <div className="flex items-start justify-between gap-2">
-                                <div className="rounded-2xl bg-pink-100 p-2.5">
-                                    <Package className="size-5 text-pink-600" />
+                                <div className="rounded-2xl bg-amber-100 p-2.5">
+                                    <Package className="size-5 text-amber-600" />
                                 </div>
                                 <span
                                     className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
@@ -551,13 +551,13 @@ export default function Analytics() {
                                     {orderGrowth.text}
                                 </span>
                             </div>
-                            <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-pink-400">
+                            <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
                                 Total Order
                             </p>
                             <p className="mt-1.5 text-2xl font-black text-[#111827]">
                                 {kpi.total_orders.toLocaleString('id-ID')}
                             </p>
-                            <p className="mt-1 text-xs text-[#9d174d]">
+                            <p className="mt-1 text-xs text-[#92400e]">
                                 {orderGrowth.positive ? (
                                     <span className="inline-flex items-center gap-1">
                                         <TrendingUp className="size-3 text-emerald-500" /> naik vs periode lalu
@@ -571,7 +571,7 @@ export default function Analytics() {
                         </div>
 
                         {/* Revenue */}
-                        <div className="col-span-1 rounded-[1.75rem] border border-pink-100/60 bg-white/95 p-5 shadow-sm">
+                        <div className="col-span-1 rounded-[1.75rem] border border-amber-100/60 bg-white/95 p-5 shadow-sm">
                             <div className="flex items-start justify-between gap-2">
                                 <div className="rounded-2xl bg-yellow-100 p-2.5">
                                     <HandCoins className="size-5 text-yellow-600" />
@@ -586,13 +586,13 @@ export default function Analytics() {
                                     {revenueGrowth.text}
                                 </span>
                             </div>
-                            <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-pink-400">
+                            <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
                                 Total Revenue
                             </p>
                             <p className="mt-1.5 text-2xl font-black text-[#111827]">
                                 {formatRupiah(kpi.total_revenue)}
                             </p>
-                            <p className="mt-1 text-xs text-[#9d174d]">
+                            <p className="mt-1 text-xs text-[#92400e]">
                                 {revenueGrowth.positive ? (
                                     <span className="inline-flex items-center gap-1">
                                         <TrendingUp className="size-3 text-emerald-500" /> naik vs periode lalu
@@ -606,56 +606,56 @@ export default function Analytics() {
                         </div>
 
                         {/* Avg Order Value */}
-                        <div className="col-span-1 rounded-[1.75rem] border border-pink-100/60 bg-white/95 p-5 shadow-sm">
-                            <div className="rounded-2xl bg-pink-50 p-2.5 w-fit">
-                                <ShoppingBag className="size-5 text-pink-600" />
+                        <div className="col-span-1 rounded-[1.75rem] border border-amber-100/60 bg-white/95 p-5 shadow-sm">
+                            <div className="rounded-2xl bg-amber-50 p-2.5 w-fit">
+                                <ShoppingBag className="size-5 text-amber-600" />
                             </div>
-                            <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-pink-400">
+                            <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
                                 Avg Order Value
                             </p>
                             <p className="mt-1.5 text-2xl font-black text-[#111827]">
                                 {formatRupiah(kpi.avg_order_value)}
                             </p>
-                            <p className="mt-1 text-xs text-[#9d174d]">per transaksi</p>
+                            <p className="mt-1 text-xs text-[#92400e]">per transaksi</p>
                         </div>
 
                         {/* Paid Orders */}
-                        <div className="col-span-1 rounded-[1.75rem] border border-pink-100/60 bg-white/95 p-5 shadow-sm">
+                        <div className="col-span-1 rounded-[1.75rem] border border-amber-100/60 bg-white/95 p-5 shadow-sm">
                             <div className="rounded-2xl bg-emerald-100 p-2.5 w-fit">
                                 <Users className="size-5 text-emerald-600" />
                             </div>
-                            <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-pink-400">
+                            <p className="mt-4 text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
                                 Order Lunas
                             </p>
                             <p className="mt-1.5 text-2xl font-black text-[#111827]">
                                 {kpi.paid_orders.toLocaleString('id-ID')}
                             </p>
-                            <p className="mt-1 text-xs text-[#9d174d]">
+                            <p className="mt-1 text-xs text-[#92400e]">
                                 {kpi.paid_rate}% dari total order
                             </p>
                         </div>
 
                         {/* Paid Rate */}
-                        <div className="col-span-2 sm:col-span-1 rounded-[1.75rem] border border-pink-100/60 bg-[linear-gradient(135deg,#fff8ef,#fff4f7)] p-5 shadow-sm">
+                        <div className="col-span-2 sm:col-span-1 rounded-[1.75rem] border border-amber-100/60 bg-[linear-gradient(135deg,#fffbeb,#fef3c7)] p-5 shadow-sm">
                             <div className="flex items-start justify-between">
                                 <div>
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-pink-400">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-amber-400">
                                         Tingkat Bayar
                                     </p>
                                     <p className="mt-1.5 text-3xl font-black text-[#111827]">{kpi.paid_rate}%</p>
                                 </div>
                                 <div className="rounded-2xl bg-white/80 p-2.5">
-                                    <Calendar className="size-5 text-pink-500" />
+                                    <Calendar className="size-5 text-amber-500" />
                                 </div>
                             </div>
                             {/* Mini progress bar */}
-                            <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-pink-100">
+                            <div className="mt-4 h-2.5 w-full overflow-hidden rounded-full bg-amber-100">
                                 <div
-                                    className="h-full rounded-full bg-gradient-to-r from-pink-400 to-pink-600 transition-all duration-700"
+                                    className="h-full rounded-full bg-gradient-to-r from-amber-400 to-amber-600 transition-all duration-700"
                                     style={{ width: `${kpi.paid_rate}%` }}
                                 />
                             </div>
-                            <p className="mt-2 text-xs text-[#9d174d]">
+                            <p className="mt-2 text-xs text-[#92400e]">
                                 {(kpi.total_orders - kpi.paid_orders).toLocaleString('id-ID')} belum lunas
                             </p>
                         </div>
@@ -665,34 +665,34 @@ export default function Analytics() {
                     <section className="grid grid-cols-1 gap-6 xl:grid-cols-[1.7fr_1fr]">
 
                         {/* Daily / Hourly Trend Chart */}
-                        <div className="rounded-[2rem] border border-pink-100/70 bg-white/95 p-6 shadow-sm">
+                        <div className="rounded-[2rem] border border-amber-100/70 bg-white/95 p-6 shadow-sm">
                             <div className="mb-5 flex items-start justify-between gap-3">
                                 <div>
-                                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-amber-400">
                                         {trendType === 'hourly' ? 'Tren Per Jam' : 'Tren Harian'}
                                     </p>
-                                    <h2 className="mt-1.5 text-xl font-black text-[#4c0519]">
+                                    <h2 className="mt-1.5 text-xl font-black text-[#451a03]">
                                         {trendType === 'hourly' ? 'Order Per Jam' : 'Order Per Hari'}
                                     </h2>
                                 </div>
-                                <div className="rounded-2xl bg-pink-50 px-3 py-1.5 text-xs font-bold text-pink-600">
+                                <div className="rounded-2xl bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-600">
                                     {trendType === 'hourly'
                                         ? `${dailyTrend.filter((d) => d.orders > 0).length} jam aktif`
                                         : `${dailyTrend.length} hari`}
                                 </div>
                             </div>
-                            <div className="rounded-[1.5rem] bg-[linear-gradient(180deg,#fff7fa_0%,#ffffff_100%)] p-4">
+                            <div className="rounded-[1.5rem] bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_100%)] p-4">
                                 <DailyTrendChart data={dailyTrend} />
                             </div>
                             <div className="mt-4 grid grid-cols-3 gap-3">
-                                <div className="rounded-2xl bg-pink-50/60 px-3 py-2.5 text-center">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-pink-400">Total</p>
+                                <div className="rounded-2xl bg-amber-50/60 px-3 py-2.5 text-center">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400">Total</p>
                                     <p className="mt-1 text-base font-black text-[#111827]">
                                         {dailyTrend.reduce((s, d) => s + d.orders, 0).toLocaleString('id-ID')}
                                     </p>
                                 </div>
-                                <div className="rounded-2xl bg-pink-50/60 px-3 py-2.5 text-center">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-pink-400">Rata-rata</p>
+                                <div className="rounded-2xl bg-amber-50/60 px-3 py-2.5 text-center">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400">Rata-rata</p>
                                     <p className="mt-1 text-base font-black text-[#111827]">
                                         {dailyTrend.length > 0
                                             ? Math.round(
@@ -702,13 +702,13 @@ export default function Analytics() {
                                                           : dailyTrend.length),
                                               ).toLocaleString('id-ID')
                                             : 0}{' '}
-                                        <span className="text-xs font-semibold text-[#9d174d]">
+                                        <span className="text-xs font-semibold text-[#92400e]">
                                             / {trendType === 'hourly' ? 'jam' : 'hari'}
                                         </span>
                                     </p>
                                 </div>
-                                <div className="rounded-2xl bg-pink-50/60 px-3 py-2.5 text-center">
-                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-pink-400">Maks</p>
+                                <div className="rounded-2xl bg-amber-50/60 px-3 py-2.5 text-center">
+                                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400">Maks</p>
                                     <p className="mt-1 text-base font-black text-[#111827]">
                                         {dailyTrend.length > 0
                                             ? Math.max(...dailyTrend.map((d) => d.orders)).toLocaleString('id-ID')
@@ -719,26 +719,26 @@ export default function Analytics() {
                         </div>
 
                         {/* Platform Distribution */}
-                        <div className="rounded-[2rem] border border-pink-100/70 bg-white/95 p-6 shadow-sm">
+                        <div className="rounded-[2rem] border border-amber-100/70 bg-white/95 p-6 shadow-sm">
                             <div className="mb-5">
-                                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-amber-400">
                                     Platform
                                 </p>
-                                <h2 className="mt-1.5 text-xl font-black text-[#4c0519]">
+                                <h2 className="mt-1.5 text-xl font-black text-[#451a03]">
                                     Distribusi Channel
                                 </h2>
                             </div>
                             <PlatformBars data={platformData} />
 
                             {platformData.length > 0 && (
-                                <div className="mt-5 rounded-2xl bg-pink-50/60 px-4 py-3">
-                                    <p className="text-xs font-semibold text-[#831843]">
+                                <div className="mt-5 rounded-2xl bg-amber-50/60 px-4 py-3">
+                                    <p className="text-xs font-semibold text-[#78350f]">
                                         Channel terkuat:{' '}
-                                        <span className="font-black text-[#4c0519]">
+                                        <span className="font-black text-[#451a03]">
                                             {platformData[0]?.platform ?? '-'}
                                         </span>
                                     </p>
-                                    <p className="mt-1 text-xs text-[#9d174d]">
+                                    <p className="mt-1 text-xs text-[#92400e]">
                                         {platformData[0]?.count.toLocaleString('id-ID')} orders (
                                         {platformData.length > 0
                                             ? Math.round(
@@ -757,17 +757,17 @@ export default function Analytics() {
                     {/* ── PIC Leaderboard ──────────────────────────────────── */}
                     <section>
                         <div className="mb-4">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-amber-400">
                                 Hall of Fame
                             </p>
-                            <h2 className="mt-1 text-2xl font-black text-[#4c0519]">Performa Tim per Periode</h2>
+                            <h2 className="mt-1 text-2xl font-black text-[#451a03]">Performa Tim per Periode</h2>
                         </div>
                         <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
                             <LeaderColumn
                                 title="Si Paling CS"
                                 subtitle="Customer Service"
                                 icon={Headset}
-                                iconBg="bg-pink-100 text-pink-600"
+                                iconBg="bg-amber-100 text-amber-600"
                                 data={leaderboards?.cs ?? []}
                             />
                             <LeaderColumn
@@ -788,13 +788,13 @@ export default function Analytics() {
                     </section>
 
                     {/* ── Recent Orders ────────────────────────────────────── */}
-                    <section className="rounded-[2rem] border border-pink-100/70 bg-white/95 p-6 shadow-sm">
+                    <section className="rounded-[2rem] border border-amber-100/70 bg-white/95 p-6 shadow-sm">
                         <div className="mb-5 flex items-center justify-between">
                             <div>
-                                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-pink-400">
+                                <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-amber-400">
                                     Transaksi
                                 </p>
-                                <h2 className="mt-1.5 text-2xl font-black text-[#4c0519]">Order Terbaru</h2>
+                                <h2 className="mt-1.5 text-2xl font-black text-[#451a03]">Order Terbaru</h2>
                             </div>
                         </div>
 
@@ -802,9 +802,9 @@ export default function Analytics() {
                             {latestOrders.map((order) => (
                                 <div
                                     key={order.order_code}
-                                    className="grid gap-3 rounded-[1.5rem] border border-pink-100/70 bg-[linear-gradient(180deg,#fffefe_0%,#fff7fa_100%)] p-4 sm:grid-cols-[auto_1fr_auto] sm:items-center"
+                                    className="grid gap-3 rounded-[1.5rem] border border-amber-100/70 bg-[linear-gradient(180deg,#fefce8_0%,#fffbeb_100%)] p-4 sm:grid-cols-[auto_1fr_auto] sm:items-center"
                                 >
-                                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-pink-100 font-black text-[#6E1131]">
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-100 font-black text-[#b45309]">
                                         {getInitial(order.customer_name)}
                                     </div>
                                     <div className="min-w-0">
@@ -818,10 +818,10 @@ export default function Analytics() {
                                                 </span>
                                             )}
                                         </div>
-                                        <p className="mt-0.5 text-xs font-semibold text-[#9d174d]">
+                                        <p className="mt-0.5 text-xs font-semibold text-[#92400e]">
                                             #{order.order_code}
                                         </p>
-                                        <p className="mt-0.5 text-[11px] text-pink-300">
+                                        <p className="mt-0.5 text-[11px] text-amber-300">
                                             {relativeTime(order.created_at)}
                                         </p>
                                     </div>
@@ -830,7 +830,7 @@ export default function Analytics() {
                                             {formatRupiah(order.total_payment)}
                                         </span>
                                         {order.status ? (
-                                            <span className="rounded-full bg-pink-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-pink-600">
+                                            <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-600">
                                                 {order.status}
                                             </span>
                                         ) : (

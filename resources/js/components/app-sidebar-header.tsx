@@ -20,7 +20,7 @@ export function AppSidebarHeader({
 
     return (
         <>
-            <header className="hidden h-16 shrink-0 items-center justify-between border-b border-pink-100 bg-white px-8 md:flex">
+            <header className="sticky top-0 z-20 hidden h-16 shrink-0 items-center justify-between border-b border-pink-100 bg-white/95 px-8 backdrop-blur-sm md:flex">
                 <div className="flex items-center gap-4">
                     <h2 className="text-lg font-bold text-pink-950">{currentTitle}</h2>
                 </div>
@@ -48,7 +48,7 @@ export function AppSidebarHeader({
                 </div>
             </header>
 
-            <header className="relative z-20 flex items-center justify-between border-b border-pink-100 bg-white px-5 py-2 shadow-sm md:hidden">
+            <header className="sticky top-0 z-20 flex items-center justify-between border-b border-pink-100 bg-white/95 px-5 py-2 shadow-sm backdrop-blur-sm md:hidden">
                 <div className="flex items-center gap-2.5 py-3">
                     <div className="flex size-7 items-center justify-center overflow-hidden rounded-[10px] shadow-sm shadow-pink-200">
                         <img src="/img/5cfb4353a02182a1292f91d7e7f6507c.webp" alt="Makenliving" className="size-full object-cover" />

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Inertia\Inertia;
 use MongoDB\BSON\ObjectId;
 use MongoDB\BSON\UTCDateTime;
@@ -12,182 +13,212 @@ class AnalyticsController extends Controller
 {
     public function index(Request $request)
     {
-        $period = $request->input('period', 'this_month');
+        $period      = $request->input('period', 'this_month');
         $customStart = $request->input('start');
-        $customEnd = $request->input('end');
+        $customEnd   = $request->input('end');
 
-        [$start, $end] = $this->resolvePeriod($period, $customStart, $customEnd);
+        [$start, $end]         = $this->resolvePeriod($period, $customStart, $customEnd);
         [$prevStart, $prevEnd] = $this->previousPeriod($start, $end);
 
-        $db = \DB::connection('mongodb_remote');
-
-        // ── KPI Periode Ini ────────────────────────────────────────────────
-        $totalOrders = $db->table('orders')
-            ->whereBetween('createdAt', [$start, $end])
-            ->count();
-
-        $paidOrders = $db->table('orders')
-            ->whereBetween('createdAt', [$start, $end])
-            ->where('is_paid', true)
-            ->count();
-
-        $totalRevenue = $db->table('orders')
-            ->whereBetween('createdAt', [$start, $end])
-            ->sum('total_payment');
-
-        // ── KPI Periode Sebelumnya (untuk hitung growth) ──────────────────
-        $prevTotalOrders = $db->table('orders')
-            ->whereBetween('createdAt', [$prevStart, $prevEnd])
-            ->count();
-
-        $prevRevenue = $db->table('orders')
-            ->whereBetween('createdAt', [$prevStart, $prevEnd])
-            ->sum('total_payment');
-
-        // ── Distribusi Platform ───────────────────────────────────────────
-        $platformRaw = $db->table('orders')
-            ->whereBetween('createdAt', [$start, $end])
-            ->select('platform')
-            ->get();
-
-        $platformGroups = collect($platformRaw)
-            ->groupBy(fn($o) => $o->platform ?: 'Lainnya')
-            ->map(fn($group, $name) => ['platform' => $name, 'count' => $group->count()])
-            ->sortByDesc('count')
-            ->values()
-            ->toArray();
-
-        // ── Trend Harian / Per Jam ─────────────────────────────────────────
         $singleDay = in_array($period, ['today', 'yesterday'])
             || ($period === 'custom' && $start->toDateString() === $end->toDateString());
 
-        $recentOrders = $db->table('orders')
-            ->whereBetween('createdAt', [$start, $end])
-            ->orderBy('createdAt', 'asc')
-            ->select(['order_code', 'createdAt', 'total_payment', 'platform', 'is_paid'])
-            ->get();
-
-        if ($singleDay) {
-            // Isi 24 jam kosong dulu, lalu hitung per jam
-            $buckets = array_fill(0, 24, ['orders' => 0, 'revenue' => 0]);
-            foreach ($recentOrders as $o) {
-                $hour = (int) Carbon::parse($o->createdAt)->format('H');
-                $buckets[$hour]['orders']++;
-                $buckets[$hour]['revenue'] += (int) ($o->total_payment ?? 0);
-            }
-            $dailyTrend = array_map(
-                fn($hour, $data) => [
-                    'label'   => str_pad($hour, 2, '0', STR_PAD_LEFT) . ':00',
-                    'orders'  => $data['orders'],
-                    'revenue' => $data['revenue'],
-                ],
-                array_keys($buckets),
-                array_values($buckets),
-            );
-        } else {
-            $dailyTrend = collect($recentOrders)
-                ->groupBy(fn($o) => Carbon::parse($o->createdAt)->format('Y-m-d'))
-                ->map(fn($group, $date) => [
-                    'label'   => substr($date, 5), // "MM-DD"
-                    'orders'  => $group->count(),
-                    'revenue' => $group->sum(fn($o) => $o->total_payment ?? 0),
-                ])
-                ->sortKeys()
-                ->values()
-                ->toArray();
-        }
-
-        // ── Transaksi Terbaru ─────────────────────────────────────────────
-        $latestOrders = $db->table('orders')
-            ->orderBy('createdAt', 'desc')
-            ->limit(12)
-            ->select(['order_code', 'personal_detail', 'total_payment', 'platform', 'is_paid', 'createdAt', 'history_status', 'resi'])
-            ->get()
-            ->map(function ($o) {
-                $o = (array) $o;
-                $personalDetail = is_array($o['personal_detail'] ?? null)
-                    ? $o['personal_detail']
-                    : (array)($o['personal_detail'] ?? []);
-
-                $historyStatus = $o['history_status'] ?? [];
-                $currentStatus = null;
-                if (is_array($historyStatus) && count($historyStatus) > 0) {
-                    $last = end($historyStatus);
-                    $last = (array) $last;
-                    $statusObj = is_array($last['status'] ?? null) ? $last['status'] : (array)($last['status'] ?? []);
-                    $currentStatus = $statusObj['status_name'] ?? null;
-                }
-
-                return [
-                    'order_code'    => $o['order_code'] ?? '-',
-                    'customer_name' => $personalDetail['customer_name'] ?? 'Unknown',
-                    'total_payment' => $o['total_payment'] ?? 0,
-                    'platform'      => $o['platform'] ?? null,
-                    'is_paid'       => $o['is_paid'] ?? false,
-                    'status'        => $currentStatus,
-                    'resi'          => $o['resi'] ?? null,
-                    'created_at'    => $o['createdAt'] ?? null,
-                ];
-            })
-            ->toArray();
-
-        // ── Hitung Growth ─────────────────────────────────────────────────
-        $orderGrowth  = $prevTotalOrders > 0
-            ? round((($totalOrders - $prevTotalOrders) / $prevTotalOrders) * 100, 1)
-            : 0;
-
-        $revenueGrowth = $prevRevenue > 0
-            ? round((($totalRevenue - $prevRevenue) / $prevRevenue) * 100, 1)
-            : 0;
-
-        $avgOrderValue = $totalOrders > 0 ? (int) round($totalRevenue / $totalOrders) : 0;
-        $paidRate      = $totalOrders > 0 ? round(($paidOrders / $totalOrders) * 100, 1) : 0;
-
-        // ── Leaderboard PIC ───────────────────────────────────────────────
-        $leaderboards = $this->buildPicLeaderboard($start, $end);
+        // Cache 5 detik — cukup untuk debounce double-request, tetap near-realtime
+        $cacheKey = "analytics:{$period}:{$start->toDateString()}:{$end->toDateString()}";
+        $data = Cache::remember($cacheKey, 5, fn () =>
+            $this->fetchAll($start, $end, $prevStart, $prevEnd, $singleDay)
+        );
 
         return Inertia::render('analytics', [
-            'period'       => $period,
-            'periodStart'  => $start->toDateString(),
-            'periodEnd'    => $end->toDateString(),
-            'kpi'          => [
-                'total_orders'   => $totalOrders,
-                'total_revenue'  => (int) $totalRevenue,
-                'paid_orders'    => $paidOrders,
-                'paid_rate'      => $paidRate,
-                'avg_order_value'=> $avgOrderValue,
-                'order_growth'   => $orderGrowth,
-                'revenue_growth' => $revenueGrowth,
+            'period'      => $period,
+            'periodStart' => $start->toDateString(),
+            'periodEnd'   => $end->toDateString(),
+            'trendType'   => $singleDay ? 'hourly' : 'daily',
+            ...$data,
+        ]);
+    }
+
+    // ── Core Data Fetch ───────────────────────────────────────────────────
+
+    private function fetchAll(
+        Carbon $start, Carbon $end,
+        Carbon $prevStart, Carbon $prevEnd,
+        bool $singleDay
+    ): array {
+        $col    = \DB::connection('mongodb_remote')->getDatabase()->selectCollection('orders');
+        $mStart = new UTCDateTime((int) ($start->getTimestamp() * 1000));
+        $mEnd   = new UTCDateTime((int) ($end->getTimestamp() * 1000));
+        $pStart = new UTCDateTime((int) ($prevStart->getTimestamp() * 1000));
+        $pEnd   = new UTCDateTime((int) ($prevEnd->getTimestamp() * 1000));
+
+        // ── A. Main period: KPI + Platform + Trend dalam 1 round-trip ─────
+        $facetResult = iterator_to_array($col->aggregate([
+            ['$match' => ['createdAt' => ['$gte' => $mStart, '$lte' => $mEnd]]],
+            ['$facet' => [
+                'kpi' => [
+                    ['$group' => [
+                        '_id'           => null,
+                        'total_orders'  => ['$sum' => 1],
+                        'paid_orders'   => ['$sum' => ['$cond' => [['$eq' => ['$is_paid', true]], 1, 0]]],
+                        'total_revenue' => ['$sum' => '$total_payment'],
+                    ]],
+                ],
+                'byPlatform' => [
+                    ['$group' => ['_id' => ['$ifNull' => ['$platform', 'Lainnya']], 'count' => ['$sum' => 1]]],
+                    ['$sort'  => ['count' => -1]],
+                ],
+                'byDay' => [
+                    ['$group' => [
+                        '_id'     => ['$dateToString' => ['format' => '%Y-%m-%d', 'date' => '$createdAt']],
+                        'orders'  => ['$sum' => 1],
+                        'revenue' => ['$sum' => '$total_payment'],
+                    ]],
+                    ['$sort' => ['_id' => 1]],
+                ],
+                'byHour' => [
+                    ['$group' => [
+                        '_id'     => ['$hour' => '$createdAt'],
+                        'orders'  => ['$sum' => 1],
+                        'revenue' => ['$sum' => '$total_payment'],
+                    ]],
+                    ['$sort' => ['_id' => 1]],
+                ],
+            ]],
+        ]));
+
+        $facet = (array) ($facetResult[0] ?? []);
+
+        // Parse KPI
+        $kpiItems     = $facet['kpi'] ? iterator_to_array($facet['kpi']) : [];
+        $kpi          = $kpiItems ? (array) $kpiItems[0] : [];
+        $totalOrders  = (int) ($kpi['total_orders']  ?? 0);
+        $paidOrders   = (int) ($kpi['paid_orders']   ?? 0);
+        $totalRevenue = (int) ($kpi['total_revenue'] ?? 0);
+
+        // Parse Platform
+        $platformData = collect($facet['byPlatform'] ? iterator_to_array($facet['byPlatform']) : [])
+            ->map(fn ($item) => [
+                'platform' => (string) ((array) $item)['_id'],
+                'count'    => (int)    ((array) $item)['count'],
+            ])
+            ->values()->toArray();
+
+        // Parse Trend
+        if ($singleDay) {
+            $hourBuckets = array_fill(0, 24, ['orders' => 0, 'revenue' => 0]);
+            foreach ($facet['byHour'] ? iterator_to_array($facet['byHour']) : [] as $item) {
+                $row = (array) $item;
+                $hourBuckets[(int) $row['_id']] = [
+                    'orders'  => (int) ($row['orders']  ?? 0),
+                    'revenue' => (int) ($row['revenue'] ?? 0),
+                ];
+            }
+            $dailyTrend = array_map(
+                fn ($h, $d) => ['label' => str_pad($h, 2, '0', STR_PAD_LEFT) . ':00', 'orders' => $d['orders'], 'revenue' => $d['revenue']],
+                array_keys($hourBuckets), array_values($hourBuckets)
+            );
+        } else {
+            $dailyTrend = collect($facet['byDay'] ? iterator_to_array($facet['byDay']) : [])
+                ->map(fn ($item) => [
+                    'label'   => substr((string) ((array) $item)['_id'], 5),
+                    'orders'  => (int) ((array) $item)['orders'],
+                    'revenue' => (int) ((array) $item)['revenue'],
+                ])
+                ->values()->toArray();
+        }
+
+        // ── B. Periode sebelumnya: hanya total (1 round-trip) ─────────────
+        $prevResult  = iterator_to_array($col->aggregate([
+            ['$match' => ['createdAt' => ['$gte' => $pStart, '$lte' => $pEnd]]],
+            ['$group' => ['_id' => null, 'total_orders' => ['$sum' => 1], 'total_revenue' => ['$sum' => '$total_payment']]],
+        ]));
+        $prev        = (array) ($prevResult[0] ?? []);
+        $prevOrders  = (int) ($prev['total_orders']  ?? 0);
+        $prevRevenue = (int) ($prev['total_revenue'] ?? 0);
+
+        // ── C. 12 Order Terbaru ───────────────────────────────────────────
+        $latestOrders = $this->fetchLatestOrders($col);
+
+        // ── D. Leaderboard PIC (3 aggregations) ──────────────────────────
+        $leaderboards = $this->buildPicLeaderboard($col, $mStart, $mEnd);
+
+        // ── E. Derived metrics ────────────────────────────────────────────
+        $orderGrowth   = $prevOrders  > 0 ? round((($totalOrders  - $prevOrders)  / $prevOrders)  * 100, 1) : 0;
+        $revenueGrowth = $prevRevenue > 0 ? round((($totalRevenue - $prevRevenue) / $prevRevenue) * 100, 1) : 0;
+
+        return [
+            'kpi' => [
+                'total_orders'    => $totalOrders,
+                'total_revenue'   => $totalRevenue,
+                'paid_orders'     => $paidOrders,
+                'paid_rate'       => $totalOrders > 0 ? round(($paidOrders / $totalOrders) * 100, 1) : 0,
+                'avg_order_value' => $totalOrders > 0 ? (int) round($totalRevenue / $totalOrders) : 0,
+                'order_growth'    => $orderGrowth,
+                'revenue_growth'  => $revenueGrowth,
             ],
-            'trendType'    => $singleDay ? 'hourly' : 'daily',
-            'platformData' => array_values($platformGroups),
-            'dailyTrend'   => $dailyTrend,
+            'platformData' => array_values($platformData),
+            'dailyTrend'   => array_values($dailyTrend),
             'latestOrders' => array_values($latestOrders),
             'leaderboards' => $leaderboards,
-        ]);
+        ];
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────
 
-    /**
-     * Aggregate top PIC (CS, CS Support, Layouter) by order count in the period.
-     * Uses raw MongoDB aggregation pipeline for performance on large collections.
-     */
-    private function buildPicLeaderboard(Carbon $start, Carbon $end): array
+    private function fetchLatestOrders($col): array
     {
-        $mongoDb    = \DB::connection('mongodb_remote')->getDatabase();
-        $collection = $mongoDb->selectCollection('orders');
+        $cursor = $col->find(
+            [],
+            [
+                'sort'       => ['createdAt' => -1],
+                'limit'      => 12,
+                'projection' => [
+                    'order_code'      => 1,
+                    'personal_detail' => 1,
+                    'total_payment'   => 1,
+                    'platform'        => 1,
+                    'is_paid'         => 1,
+                    'createdAt'       => 1,
+                    'history_status'  => 1,
+                    'resi'            => 1,
+                ],
+            ]
+        );
 
-        $mongoStart = new UTCDateTime((int) ($start->getTimestamp() * 1000));
-        $mongoEnd   = new UTCDateTime((int) ($end->getTimestamp() * 1000));
+        return collect(iterator_to_array($cursor))->map(function ($doc) {
+            $o              = (array) $doc;
+            $personalDetail = is_array($o['personal_detail'] ?? null)
+                ? $o['personal_detail']
+                : (array) ($o['personal_detail'] ?? []);
+            $historyStatus  = $o['history_status'] ?? [];
+            $currentStatus  = null;
 
-        $matchDate = [
-            '$match' => [
-                'createdAt' => ['$gte' => $mongoStart, '$lte' => $mongoEnd],
-            ],
-        ];
+            if (is_array($historyStatus) && count($historyStatus) > 0) {
+                $last      = (array) end((array) $historyStatus);
+                $statusObj = is_array($last['status'] ?? null) ? $last['status'] : (array) ($last['status'] ?? []);
+                $currentStatus = $statusObj['status_name'] ?? null;
+            }
 
-        // Aggregate for each role
+            return [
+                'order_code'    => $o['order_code']    ?? '-',
+                'customer_name' => $personalDetail['customer_name'] ?? 'Unknown',
+                'total_payment' => (int) ($o['total_payment'] ?? 0),
+                'platform'      => $o['platform']      ?? null,
+                'is_paid'       => $o['is_paid']       ?? false,
+                'status'        => $currentStatus,
+                'resi'          => $o['resi']          ?? null,
+                'created_at'    => $o['createdAt']     ?? null,
+            ];
+        })->values()->toArray();
+    }
+
+    /**
+     * Aggregate top PIC (CS, CS Support, Layouter) menggunakan MongoDB aggregation pipeline.
+     */
+    private function buildPicLeaderboard($collection, UTCDateTime $mStart, UTCDateTime $mEnd): array
+    {
+        $matchDate = ['$match' => ['createdAt' => ['$gte' => $mStart, '$lte' => $mEnd]]];
+
         $roles = [
             'cs'         => 'pic.cs',
             'cs_support' => 'pic.cs_support',
@@ -196,7 +227,7 @@ class AnalyticsController extends Controller
 
         $raw = [];
         foreach ($roles as $roleKey => $field) {
-            $cursor = $collection->aggregate([
+            $cursor        = $collection->aggregate([
                 $matchDate,
                 ['$match' => [$field => ['$exists' => true, '$ne' => null]]],
                 ['$group' => ['_id' => '$' . $field, 'count' => ['$sum' => 1]]],
@@ -206,40 +237,37 @@ class AnalyticsController extends Controller
             $raw[$roleKey] = iterator_to_array($cursor);
         }
 
-        // Collect all unique employee ObjectIds across all roles
+        // Kumpulkan ObjectId unik dari hasil leaderboard
         $uniqueIds = [];
         foreach ($raw as $roleData) {
             foreach ($roleData as $item) {
-                $oid = $item['_id'] ?? null;
+                $oid = ((array) $item)['_id'] ?? null;
                 if ($oid instanceof ObjectId) {
                     $uniqueIds[(string) $oid] = true;
                 }
             }
         }
 
-        // Fetch all 86 employees in one query and build an id→name map
+        // Ambil nama karyawan (satu query untuk semua role)
         $employeeMap = [];
-        $empRows = \DB::connection('mongodb_remote')->table('employees')->get();
-        foreach ($empRows as $emp) {
+        foreach (\DB::connection('mongodb_remote')->table('employees')->get() as $emp) {
             $emp = (array) $emp;
-            // Laravel MongoDB query builder renames '_id' → 'id' on results
             $oid = $emp['id'] ?? $emp['_id'] ?? null;
             if ($oid instanceof ObjectId) {
                 $employeeMap[(string) $oid] = $emp['name'] ?? 'Unknown';
             }
         }
 
-        // Build structured leaderboard arrays
         $leaderboards = [];
         foreach ($raw as $roleKey => $roleData) {
             $leaderboards[$roleKey] = [];
             foreach ($roleData as $rank => $item) {
+                $item = (array) $item;
                 $oid  = $item['_id'] instanceof ObjectId ? (string) $item['_id'] : null;
-                $name = $oid ? ($employeeMap[$oid] ?? 'Unknown') : 'Tidak Diketahui';
                 $leaderboards[$roleKey][] = [
                     'rank'  => $rank + 1,
-                    'name'  => $name,
-                    'count' => (int) $item['count'],
+                    'name'  => $oid ? ($employeeMap[$oid] ?? 'Unknown') : 'Tidak Diketahui',
+                    'count' => (int) ($item['count'] ?? 0),
                 ];
             }
         }
@@ -281,3 +309,4 @@ class AnalyticsController extends Controller
         ];
     }
 }
+
