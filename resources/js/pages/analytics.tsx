@@ -474,7 +474,7 @@ export default function Analytics() {
                             </h1>
                             <p className="mt-1 text-sm text-[#92400e]">
                                 {periodStart} — {periodEnd} ·{' '}
-                                <span className="font-semibold">{totalOrdersTrend.toLocaleString('id-ID')} orders</span>
+                                <span className="font-semibold">{kpi.total_orders.toLocaleString('id-ID')} orders</span>
                             </p>
                         </div>
 
@@ -688,7 +688,7 @@ export default function Analytics() {
                                 <div className="rounded-2xl bg-amber-50/60 px-3 py-2.5 text-center">
                                     <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-400">Total</p>
                                     <p className="mt-1 text-base font-black text-[#111827]">
-                                        {dailyTrend.reduce((s, d) => s + d.orders, 0).toLocaleString('id-ID')}
+                                        {kpi.total_orders.toLocaleString('id-ID')}
                                     </p>
                                 </div>
                                 <div className="rounded-2xl bg-amber-50/60 px-3 py-2.5 text-center">
