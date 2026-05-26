@@ -1,5 +1,5 @@
 import { Link, usePage } from '@inertiajs/react';
-import { BarChart3, ChevronDown, Eye, FileText, LayoutGrid, Package, PencilLine, Settings, ShoppingBag, ShoppingCart, Users, X } from 'lucide-react';
+import { BarChart3, ChevronDown, Eye, FileText, LayoutGrid, MapPin, Package, PencilLine, Settings, ShoppingBag, ShoppingCart, Users, X } from 'lucide-react';
 import { useState } from 'react';
 import {
     Sidebar,
@@ -9,7 +9,7 @@ import {
     useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
-import { analytics, dashboard, makenliving } from '@/routes';
+import { analytics, dashboard, geografi, makenliving } from '@/routes';
 import { edit as profileEdit } from '@/routes/profile';
 import type { Auth } from '@/types';
 
@@ -148,6 +148,7 @@ export function AppSidebar() {
                         <NavLink href={dashboard().url} icon={LayoutGrid} label="Dashboard" active={isCurrentUrl(dashboard())} />
                         <NavLink href={analytics().url} icon={BarChart3} label="IDPhotobook" active={isCurrentUrl(analytics())} />
                         <NavLink href={makenliving().url} icon={ShoppingCart} label="Makenliving" active={isCurrentUrl(makenliving())} />
+                        <NavLink href={geografi().url} icon={MapPin} label="Geografi" active={isCurrentUrl(geografi())} />
                         {/* <NavLink href="/admin/order/create" icon={PencilLine} label="Input Order" active={isCurrentUrl('/admin/order/create')} prominent />
                         <NavLink href="/admin/order" icon={ShoppingCart} label="Orders" active={isCurrentOrParentUrl('/admin/order')} />
 
